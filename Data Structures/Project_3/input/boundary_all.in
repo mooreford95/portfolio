@@ -1,0 +1,14 @@
+isfriend A B
+isfriend H I
+isfriend A G
+isfriend E I
+mutual D F
+mutual E A
+mutual C E
+mutual B C
+relation A G
+relation F B
+relation I H
+relation F I
+notconnected
+popular

@@ -1,0 +1,9 @@
+3 2 morning
+17 1 See
+10 3 you
+17 2 forget
+10 1 How
+17 3 later
+3 1 Good
+17 2 you
+10 4 doing

@@ -1,0 +1,10 @@
+alpha
+beta
+gamma
+delta
+epsilon
+$
+beta alpha
+epsilon gamma
+delta alpha
+epsilon delta

@@ -1,0 +1,26 @@
+These files are test cases based on two graphs: simple-graph.txt and boundary-graph.txt.
+
+To test your program, compile it, and do
+
+$ java simple-graph.txt < simple.in > my-simple.out
+$ diff simple.out my-simple.out
+
+$ java boundary-graph.txt < b1_isfriend.in > my-b1_isfriend.out
+$ diff b1_isfriend.out my-b1_isfriend.out
+
+$ java boundary-graph.txt < b2_mutual.in > my-b2_mutual.out
+$ diff b2_mutual.out my-b2_mutual.out
+
+$ java boundary-graph.txt < b3_relation.in > my-b3_relation.out
+$ diff b3_relation.out my-b3_relation.out
+
+$ java boundary-graph.txt < b4_notconnected.in > my-b4_notconnected.out
+$ diff b4_notconnected.out my-b4_notconnected.out
+
+$ java boundary-graph.txt < b5_popular.in > my-b5_popular.out
+$ diff b5_popular.out my-b5_popular.out
+
+$ java boundary-graph.txt < boundary_all.in > my-boundary_all.out
+$ diff boundary_all.out my-boundary_all.out
+
+You should not see any differences.

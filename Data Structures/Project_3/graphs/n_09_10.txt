@@ -1,0 +1,20 @@
+ixi
+tcp
+msp
+fuy
+qud
+gmp
+rwx
+lqu
+sdv
+$
+ixi lqu
+sdv gmp
+sdv qud
+ixi tcp
+fuy tcp
+gmp lqu
+fuy ixi
+msp qud
+msp tcp
+qud lqu
