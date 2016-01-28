@@ -1,0 +1,70 @@
+#include "wordlist.h"
+
+char *readFile( FILE *fp )
+{
+  int capacity = WORD_MAX;
+  char *buffer = malloc( capacity );
+
+  // Number of characters we're currently using.
+  int len = 0;
+  
+  // Read from standard file until we
+  // reach end-of-file, storing all characters in buffer.
+  char c = 0;
+  while (fscanf(fp, "%c", &c) != EOF){
+    
+    if(c == EOF){
+      break;
+    }
+    
+    buffer[len] = c;
+    buffer[len + 1] = '\0';
+    len++;
+    
+    if (len >= capacity / 2){
+      capacity *= 2;
+      buffer = realloc(buffer, capacity + 2);
+    }
+   }
+  
+  return buffer;
+}
+
+int main(int argc, char *argv[]){
+  
+  char *wordFile = "words.txt";
+  WordList *wordList;
+  
+  if (argc != NEED_WORD_FILE && argc != DONT_NEED_WORD_FILE){
+    fprintf(stderr, "usage: pack <input.txt> <compressed.raw> [word_file.txt]");
+    return EXIT_FAILURE;
+  }
+  
+  if (argc == NEED_WORD_FILE) {
+ 
+    wordList = readWordList( argv[DONT_NEED_WORD_FILE] ); //I mean, argv is ZBI, right?
+ 
+  } else {
+   
+    wordList = readWordList( wordFile );
+ 
+  }
+  
+  FILE* input = fopen(argv[1], "r");
+  
+  if(!input){
+    fprintf(stderr, "Can't open file: %s\n", argv[1]);
+    exit(EXIT_FAILURE);
+  }
+  
+  FILE* output = fopen(argv[2], "w");
+  
+  if(!output){
+    fprintf(stderr, "Can't open file: %s\n", argv[2]);
+    exit(EXIT_FAILURE);
+  }
+  
+
+  
+  return(0);
+}

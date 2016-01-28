@@ -1,0 +1,202 @@
+#include <stdbool.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+
+#include "wordlist.h"
+
+#define WORD_MIN 2
+
+
+void addHardCodes(WordList* list);
+
+int myComp( const void *a, const void *b )
+{
+
+  char* aString = (char*) a;
+  char* bString = (char*) b;
+  
+  return strcmp(aString, bString);
+  
+}
+
+
+/**
+ * Given a character, this function returns true 
+ * if it's one of the 98 valid characters that can appear 
+ * in a word of the wordlist or in the text file being compressed.
+ * This function is may be used internally while reading the word file,
+ * but it's also exposed in the header file so other components can use it.
+ */
+bool validChar( char ch )
+{
+  if(ch == 0x09 || ch == 0x0A || ch == 0x0D){
+    return true;
+  }
+  
+  if(ch >= 0x20 && ch <= 0x7E){
+    return true;
+  }
+  
+  return false;
+}
+
+/**
+ * This function is responsable for building the word list.
+ * It reads words form word file given as fname.
+ * After reading all the words from the word file, it adds single-character 
+ * words for each of the 98 valid characters. 
+ * Finally, it sorts the word list lexicographically so that the index of each word is its code.
+ * The readWordList() function should dynamically allocate the WordList structure
+ * and use the fields of this structure to allocate its words array as a resizable array, 
+ * growing the list of words as it needs room to store more of them. 
+ * If you want, you can write an extra function to add a new word to the list,
+ * automatically resizing it if necessary. That's what I did.
+ * Use the qsort function to sort the word list once it contains all the needed entries.
+ * You'll need to define your own comparison function for comparing words,
+ * then pass its address as the last parameter to qsort. 
+ * This comparison function will need to take two pointers to (constant) void as parameters
+ * (since that's the type of function qsort() is expecting).
+ * Inside your comparison functiond but you can cast these two pointers to pointers to const chars,
+ * since that's what a Word evaluates to.
+ * Then, you can use something like strcmp() to decide which word should go first.
+ * There's an example of using qsort() to sort arrays of doubles from day 12 of class.
+ */
+WordList *readWordList( char const *fname )
+{
+  FILE* f = fopen(fname, "r");
+  WordList* list = malloc(sizeof(WordList));
+  list->capacity = (WORD_MAX + 1);
+  list->words = malloc(sizeof(Word) * list->capacity);
+  
+  //Make this a macro.
+  int maxWords = 414;
+  
+  // Number of characters we're currently using.
+  list->len = 0;
+  
+  int wordLen;
+  char s[WORD_MAX+1]; // = {wordLen = '\0'};
+  for (int i = 0; i < maxWords && fscanf(f, "%d", &wordLen) == 1; i++) {
+    fgetc(f); //skip space after the number
+    
+    if(wordLen > WORD_MAX || wordLen < WORD_MIN) {
+      //do something. Not sure what.TODO
+      printf("you have goofed");
+      exit(EXIT_FAILURE);
+    }
+    
+    for (int i = 0; i < wordLen; i++) {
+      fscanf(f, "%c", &(s[i]));
+      if(!validChar(s[i])) {
+        //Do something. Not sure what. TODO.
+        printf("you have goofed");
+        exit(EXIT_FAILURE);
+      }
+    }
+    s[wordLen] = '\0';
+    strcpy(list->words[list->len], s); 
+    list->len++;
+    
+    if (list->len >= list->capacity / 2){
+      list->capacity *= 2;
+      list->words = realloc(list->words, sizeof(Word) * list->capacity + 2);
+    }
+    
+  }
+  
+  addHardCodes(list);
+  
+  qsort(list->words, list->len, sizeof(Word), myComp);
+  
+  return list;
+  
+}
+
+void addHardCodes(WordList* list){
+  
+  char word[2];
+  
+  word[0] = 0x09;
+  word[1] = '\0';
+  
+  strcpy(list->words[list->len], word);
+  list->len++;
+  
+  word[0] = 0x0A;
+  
+  strcpy(list->words[list->len], word);
+  list->len++;
+  
+  word[0] = 0x0D;
+  
+  strcpy(list->words[list->len], word);
+  list->len++;
+  
+  for (int i = 0x20; i <= 0x7E; i++ ) { //flag; BVA
+    word[0] = i;
+  
+    strcpy(list->words[list->len], word);
+    list->len++;
+  }
+  
+}
+
+/**
+ * Given a word list, this function returns the best code for representing the sequence of characters at the start of the given string.
+ * (It returns the index of the longest word in the wordList that matches a prefix of the stirng.)
+ * This function is expected to use binary search to quickly find matching words. I'll add more about this later.
+ */
+int bestCode( WordList *wordList, char const *str )
+{
+  
+  Word* match = bsearch(str, wordList->words, wordList->len, sizeof(Word), myComp);
+
+//  int index = 0;
+  if (match) {
+     for(int i = 0; i < (wordList->len); i++){
+      if(strcmp(*match, (wordList->words[i])) == 0){
+        //printf("here i: %d\n", i);
+        return i;
+      }
+    } 
+  } else {
+    int oldLen = strlen(str);
+    
+    if(oldLen > WORD_MAX){
+      oldLen = WORD_MAX;
+    }
+    
+    char newStr[oldLen];
+    strncpy(newStr, str, oldLen);
+    
+    
+    newStr[oldLen - 1] = '\0';
+    
+    //printf("%s", newStr);
+    
+    return bestCode(wordList, newStr); 
+  }
+  //if it gets here, something has gone horribly wrong.
+  return 0;
+}
+
+
+
+
+/**
+ * This function frees the memory for the given wordList,
+ * including the dynamically allocated list of words inside
+ * and the wordList structure itself.
+ */
+void freeWordList( WordList *wordList )
+{
+  for (int i = 0; i < wordList->capacity - 1; i++) { //capacity or length?
+  
+    free(wordList->words[i]);
+  
+  }
+  
+  free(wordList->words);
+  free(wordList);
+}

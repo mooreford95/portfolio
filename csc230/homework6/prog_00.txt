@@ -1,0 +1,49 @@
+# A program to test many of the basic functions of the language.
+# Let's do a basic CSC116 exercise: a BMI calculator.
+# Preferably in a table.
+# BMI = ( Weight in Pounds / ( Height in inches x Height in inches ) ) x 703
+{
+
+  #header
+  print "                                    BMI table.\n"
+  print "           Find your BMI based on your height in inches and weight in pounds.\n"
+  print "                Due to technical restrictions, divide your result by ten.\n"
+  print "\n"
+  print "\n"
+  set i 120
+  print "Weight(lbs):"
+  while less i 221 {
+    print " |" 
+	print i 
+	print "| " 
+	set i add i 10
+  }
+  
+  set i 120
+  print "\n"
+  while less i 220 {
+	print "---------"
+	set i add i 10
+  }
+  print "\n"
+  
+  #chart
+  set height 65
+  while less height 76 {
+    set weight 120
+	print "|   "
+	print height
+	print ":     "
+	while less weight 221 {
+	   set weightCal mul weight 100
+	   set bmi {div weightCal {mul height height}} #BMI before freedom unit conversion
+	   print "|"
+	   print mul bmi 703 #BMI to print, using freedom unit conversion factor
+	   print "| "
+	   set weight add weight 10
+	}
+	print "\n"
+    set height add height 1
+  }
+  
+}

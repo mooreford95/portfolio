@@ -1,0 +1,213 @@
+#include "core.h"
+#include <string.h>
+#include <stdlib.h>
+#include <ctype.h>
+#include <stdbool.h>
+
+/**arbitrary length for the starting value strings of variables.*/
+#define INI_VAR_LEN 10
+
+//////////////////////////////////////////////////////////////////////
+// Context
+
+typedef struct {
+  
+  char* name;
+  
+  char* value;
+  
+} Variable;
+
+struct ContextTag{
+  int len;
+  int capacity;
+  Variable** vars;
+  
+};
+
+Variable* constructVariable(const char* name, const char* value){
+  Variable* this = (Variable*) malloc(sizeof(Variable));
+  this -> name = malloc(strlen(name)+1);
+  this -> value = malloc(strlen(value) + 1);
+  strcpy(this -> name, name);
+  strcpy(this -> value, value);
+  return this;
+}
+
+// Right now, the context does nothing.  You'll need to define your
+// own context representation and fill in these functions so they
+// actually maintain varaible values.  I just supplied these
+// mostly empty ones so the program would compile and link.
+// Oh, and remove this comment once you're done.
+
+Context* makeContext()
+{
+  
+  Context *this = malloc(sizeof(Context));
+  this -> vars = malloc(sizeof(Variable*) * INI_VAR_LEN);
+  this -> len = 0;
+  this -> capacity = INI_VAR_LEN;
+  
+  return this;
+}
+
+char const *getVariable( Context *ctxt, char const *name )
+{
+  for(int i = 0; i < ctxt->len; i++){
+    if(strcmp((ctxt->vars)[i]->name, name) == 0){
+      return (ctxt->vars)[i]->value;
+    }
+  }
+  return "";
+}
+
+void setVariable( Context *ctxt, char const *name, char *value )
+{
+  for(int i = 0; i < ctxt->len; i++){
+    if(strcmp((ctxt->vars[i])->name, name) == 0){
+      sprintf(ctxt->vars[i]->value, "%s", value);
+     // (ctxt->vars[i]->value)[strlen(value)] = '\0';
+      return;
+    }
+  }
+  
+  if(ctxt->len == (ctxt->capacity/2)){
+    ctxt->vars = (Variable**) realloc(ctxt->vars, sizeof(Variable*) * (ctxt->capacity) * 2);
+  }
+  *(ctxt -> vars + (ctxt->len)) = constructVariable(name, value);
+  ctxt->len++;
+}
+
+void freeVariable(Variable *variable){
+  free(variable->name);
+  free(variable->value);
+  free(variable);
+}
+
+void freeContext( Context *ctxt )
+{
+  for(int i = 0; i < ctxt->len; i++){
+    freeVariable((ctxt->vars)[i]);
+  }
+  free(ctxt->vars);
+  free(ctxt);
+  
+}
+
+//////////////////////////////////////////////////////////////////////
+// Input tokenization
+
+// Current line we're parsing, starting from 1 like most editors.
+static int lineCount = 1;
+
+bool nextToken( char *token, FILE *fp )
+{
+  int ch;
+
+  // Skip whitespace and comments.
+  while ( isspace( ch = fgetc( fp ) ) || ch == '#' ) {
+    // If we hit the comment characer, skip the whole line.
+    if ( ch == '#' )
+      while ( ( ch = fgetc( fp ) ) != EOF && ch != '\n' )
+        ;
+
+    if ( ch == '\n' )
+      lineCount++;
+  }
+    
+  if ( ch == EOF )
+    return false;
+
+  // Record the character we'ver read and keep up with the token length.
+  int len = 0;
+  token[ len++ ] = ch;
+
+  // Handle punctuation.
+  if ( ch == '{' || ch == '}' ) {
+    token[ len++ ] = '\0';
+    return true;
+  }
+
+  // Handle non-quoted words.
+  if ( ch != '"' ) {
+    while ( ( ch = fgetc( fp ) ) != EOF && !isspace( ch ) &&
+            ch != '{' && ch != '}' && ch != '"' && ch != '#' ) {
+      // Complain if the token is too long.
+      if ( len >= MAX_TOKEN ) {
+        fprintf( stderr, "line %d: token too long\n", linesRead() );
+        exit( EXIT_FAILURE );
+      }
+
+      token[ len++ ] = ch;
+    }
+
+    // We had to read one character too far to find the end of the token.
+    // put it back.
+    if ( ch != EOF )
+      ungetc( ch, fp );
+
+    token[ len++ ] = '\0';
+    return true;
+  }
+
+  // Most interesting case, handle strings.
+
+  // Is the next character escaped.
+  bool escape = false;
+
+  // Keep reading until we hit the matching close quote.
+  while ( ( ch = fgetc( fp ) ) != '"' || escape ) {
+    // Error conditions
+    if ( ch == EOF || ch == '\n' ) {
+      fprintf( stderr, "line %d: %s while reading parsing string literal.\n",
+               linesRead(), ch == EOF ? "EOF" : "newline" );
+      exit( EXIT_FAILURE );
+    }
+      
+    // On a backslash, we just enable escape mode.
+    if ( !escape && ch == '\\' ) {
+      escape = true;
+    } else {
+      // Interpret escape sequences if we're in escape mode.
+      if ( escape ) {
+        switch ( ch ) {
+        case 'n':
+          ch = '\n';
+          break;
+        case 't':
+          ch = '\t';
+          break;
+        case '"':
+          ch = '"';
+          break;
+        case '\\':
+          ch = '\\';
+          break;
+        default:
+          fprintf( stderr, "line %d: Invalid escape sequence \"\\%c\"\n",
+                   linesRead(), ch );
+          exit( EXIT_FAILURE );
+        }
+        escape = false;
+      }
+
+      // Complain if this string, with the eventual close quote, is too long.
+      if ( len + 1 >= MAX_TOKEN ) {
+        fprintf( stderr, "line %d: token too long\n", linesRead() );
+        exit( EXIT_FAILURE );
+      }
+      token[ len++ ] = ch;
+    }
+  }
+    
+  // Store the closing quote and the terminator and return.
+  token[ len++ ] = '"';
+  token[ len++ ] = '\0';
+  return token;
+}
+
+int linesRead()
+{
+  return lineCount;
+}
+

@@ -1,0 +1,3 @@
+Inconsistent map
+Invalid input
+Invalid command

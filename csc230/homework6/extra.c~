@@ -1,0 +1,538 @@
+#include "extra.h"
+
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+
+//////////////////////////////////////////////////////////////////////
+// Binary expressions
+
+// For arithmetic operators, this is the maximum length of a long, printed
+// out as a decimal (with a sign).
+#define MAX_NUMBER 20
+
+/** Representation for an arbitrary binary operator.  The eval
+    pointer decides what it computes. */
+typedef struct {
+  char *(*eval)( Expr *oper, Context *ctxt );
+  void (*destroy)( Expr *oper );
+
+  // Two perand expressions.
+  Expr *op1, *op2;
+} BinaryExpr;
+
+/** Free memory for any type of BinaryExpr instance. */
+static void destroyBinary( Expr *expr )
+{
+  BinaryExpr *this = (BinaryExpr *)expr;
+
+  // Free our operand subexpressions.
+  this->op1->destroy( this->op1 );
+  this->op2->destroy( this->op2 );
+
+  // Then the BinaryExpr struct itself.
+  free( this );
+}
+
+/** Construct a BinaryExpr representation and fill in the parts
+    that are common to all BinaryExpr instances. */
+static BinaryExpr *buildBinaryExpr( Expr *op1, Expr *op2 )
+{
+  BinaryExpr *this = (BinaryExpr *) malloc( sizeof( BinaryExpr ) );
+  this->destroy = destroyBinary;
+
+  this->op1 = op1;
+  this->op2 = op2;
+
+  return this;
+}
+
+/** For instances of BinaryExpr that do addition, this
+    is the funciton they call for eval. */
+static char *evalAdd( Expr *expr, Context *ctxt )
+{
+  // Get a pointer to the more specific type this function works with.
+  BinaryExpr *this = (BinaryExpr *)expr;
+
+  // Evaluate our two operands
+  char *left = this->op1->eval( this->op1, ctxt );
+  char *right = this->op2->eval( this->op2, ctxt );
+
+  // Parse the left and right operands as long ints.  Set them
+  // to zero if they don't parse correctly.
+  long a, b;
+  if ( sscanf( left, "%ld", &a ) != 1 )
+    a = 0;
+
+  if ( sscanf( right, "%ld", &b ) != 1 )
+    b = 0;
+
+  // We're done with the values returned by our two subexpressions,
+  // We just needed to get them as long ints.
+  free( left );
+  free( right );
+
+  // Compute the result, store it in a dynamically allocated string
+  // and return it to the caller.
+  char *result = (char *)malloc( MAX_NUMBER + 1 );
+  sprintf( result, "%ld", a + b );
+  return result;
+}
+
+Expr *makeAdd( Expr *op1, Expr *op2 )
+{
+  // Get in a generic instance of BinaryExpr
+  BinaryExpr *this = buildBinaryExpr( op1, op2 );
+
+  // Fill in our function to do adding.
+  this->eval = evalAdd;
+
+  // Return the instance as if it's an Expr (which it sort of is)
+  return (Expr *) this;
+}
+
+static char *evalSub( Expr *expr, Context *ctxt )
+{
+  // Get a pointer to the more specific type this function works with.
+  BinaryExpr *this = (BinaryExpr *)expr;
+
+  // Evaluate our two operands
+  char *left = this->op1->eval( this->op1, ctxt );
+  char *right = this->op2->eval( this->op2, ctxt );
+
+  // Parse the left and right operands as long ints.  Set them
+  // to zero if they don't parse correctly.
+  long a, b;
+  if ( sscanf( left, "%ld", &a ) != 1 )
+    a = 0;
+
+  if ( sscanf( right, "%ld", &b ) != 1 )
+    b = 0;
+
+  // We're done with the values returned by our two subexpressions,
+  // We just needed to get them as long ints.
+  free( left );
+  free( right );
+
+  // Compute the result, store it in a dynamically allocated string
+  // and return it to the caller.
+  char *result = (char *)malloc( MAX_NUMBER + 1 );
+  sprintf( result, "%ld", a - b );
+  return result;
+}
+
+Expr *makeSub( Expr *op1, Expr *op2 )
+{
+  // Get in a generic instance of BinaryExpr
+  BinaryExpr *this = buildBinaryExpr( op1, op2 );
+
+  // Fill in our function to do adding.
+  this->eval = evalSub;
+
+  // Return the instance as if it's an Expr (which it sort of is)
+  return (Expr *) this;
+}
+
+static char *evalMul( Expr *expr, Context *ctxt )
+{
+  // Get a pointer to the more specific type this function works with.
+  BinaryExpr *this = (BinaryExpr *)expr;
+
+  // Evaluate our two operands
+  char *left = this->op1->eval( this->op1, ctxt );
+  char *right = this->op2->eval( this->op2, ctxt );
+
+  // Parse the left and right operands as long ints.  Set them
+  // to zero if they don't parse correctly.
+  long a, b;
+  if ( sscanf( left, "%ld", &a ) != 1 )
+    a = 0;
+
+  if ( sscanf( right, "%ld", &b ) != 1 )
+    b = 0;
+
+  // We're done with the values returned by our two subexpressions,
+  // We just needed to get them as long ints.
+  free( left );
+  free( right );
+
+  // Compute the result, store it in a dynamically allocated string
+  // and return it to the caller.
+  char *result = (char *)malloc( MAX_NUMBER + 1 );
+  sprintf( result, "%ld", a * b );
+  return result;
+}
+
+Expr *makeMul( Expr *op1, Expr *op2 )
+{
+  // Get in a generic instance of BinaryExpr
+  BinaryExpr *this = buildBinaryExpr( op1, op2 );
+
+  // Fill in our function to do adding.
+  this->eval = evalMul;
+
+  // Return the instance as if it's an Expr (which it sort of is)
+  return (Expr *) this;
+}
+
+static char *evalDiv( Expr *expr, Context *ctxt )
+{
+  // Get a pointer to the more specific type this function works with.
+  BinaryExpr *this = (BinaryExpr *)expr;
+
+  // Evaluate our two operands
+  char *left = this->op1->eval( this->op1, ctxt );
+  char *right = this->op2->eval( this->op2, ctxt );
+
+  // Parse the left and right operands as long ints.  Set them
+  // to zero if they don't parse correctly.
+  long a, b;
+  if ( sscanf( left, "%ld", &a ) != 1 )
+    a = 0;
+
+  if ( sscanf( right, "%ld", &b ) != 1 )
+    b = 0;
+
+  // We're done with the values returned by our two subexpressions,
+  // We just needed to get them as long ints.
+  free( left );
+  free( right );
+
+  // Compute the result, store it in a dynamically allocated string
+  // and return it to the caller.
+  char *result = (char *)malloc( MAX_NUMBER + 1 );
+  sprintf( result, "%ld", (a / b) );
+  return result;
+}
+
+Expr *makeDiv( Expr *op1, Expr *op2 )
+{
+  // Get in a generic instance of BinaryExpr
+  BinaryExpr *this = buildBinaryExpr( op1, op2 );
+
+  // Fill in our function to do adding.
+  this->eval = evalDiv;
+
+  // Return the instance as if it's an Expr (which it sort of is)
+  return (Expr *) this;
+}
+  ////////////////////////////////////////////////////////////////////////////////////////
+ ///////////////////////////EQUALS///////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////////////
+static char *evalEqual( Expr *expr, Context *ctxt )
+{
+  // Get a pointer to the more specific type this function works with.
+  BinaryExpr *this = (BinaryExpr *)expr;
+
+  // Evaluate our two operands
+  char *left = this->op1->eval( this->op1, ctxt );
+  char *right = this->op2->eval( this->op2, ctxt );
+
+  
+  char* trueResult = ("true");
+
+  // Compute the result, store it in a dynamically allocated string
+  // and return it to the caller.
+  //the longest it could be is the length of "true" plus the null
+  char *result = (char *)malloc( strlen(trueResult) + 1 );
+  
+  //printf("left: %s \n right: %s \n", left, right);
+  
+  if(strcmp(left, right) == 0) { //TODO flag
+    sprintf( result, "%s", trueResult);
+  } else {
+    sprintf(result, "%s", ""); //empty string is false
+  }
+  
+  // We're done with the values returned by our two subexpressions,
+  free( left );
+  free( right );
+  
+  return result;
+}
+
+Expr *makeEqual( Expr *op1, Expr *op2 )
+{
+   // Get in a generic instance of BinaryExpr
+  BinaryExpr *this = buildBinaryExpr( op1, op2 );
+
+  // Fill in our function to do equality.
+  this->eval = evalEqual;
+
+  // Return the instance as if it's an Expr (which it sort of is)
+  return (Expr *) this;
+}
+
+////////////////////////////////////////////////////////////////////////////////////////////////////////////
+///////////////////////////////LESS
+
+static char *evalLess( Expr *expr, Context *ctxt )
+{
+  // Get a pointer to the more specific type this function works with.
+  BinaryExpr *this = (BinaryExpr *)expr;
+
+  // Evaluate our two operands
+  char *left = this->op1->eval( this->op1, ctxt );
+  char *right = this->op2->eval( this->op2, ctxt );
+
+  // Parse the left and right operands as long ints.  Set them
+  // to zero if they don't parse correctly.
+  long a, b;
+  if ( sscanf( left, "%ld", &a ) != 1 )
+    a = 0;
+
+  if ( sscanf( right, "%ld", &b ) != 1 )
+    b = 0;
+
+  // We're done with the values returned by our two subexpressions,
+  // We just needed to get them as long ints.
+  free( left );
+  free( right );
+  
+  char* trueResult = ("true");
+
+  // Compute the result, store it in a dynamically allocated string
+  // and return it to the caller.
+  //the longest it could be is the length of "true" plus the null
+  char *result = (char *)malloc( strlen(trueResult) + 1 );
+  
+  if(a < b) {
+    strcpy( result, trueResult);
+  } else {
+    sprintf(result, "%s", ""); //empty string is flase
+  }
+  
+  return result;
+}
+
+Expr *makeLess( Expr *op1, Expr *op2 )
+{
+  // Get in a generic instance of BinaryExpr
+  BinaryExpr *this = buildBinaryExpr( op1, op2 );
+
+  // Fill in our function to do equality.
+  this->eval = evalLess;
+
+  // Return the instance as if it's an Expr (which it sort of is)
+  return (Expr *) this;
+}
+
+  /////////////////////////////////////////////////////////////////////////////////////
+ ////////////////////////////////NOT//////////////////////////////////////////////////
+/////////////////////////////////////////////////////////////////////////////////////
+// Representation for a Literal expression, derived from Expr.
+typedef struct {
+  char *(*eval)( Expr *oper, Context *ctxt );
+  void (*destroy)( Expr *oper );
+
+  /** Value of this expression. */
+  Expr *op;
+} NotExpr;
+
+// Function to evaluate a Not expression.
+static char *evalNot( Expr *expr, Context *ctxt )
+{
+  // Cast the this pointer to a more specific type.
+  NotExpr *this = (NotExpr *)expr;
+
+  char* value = this->op->eval(this->op, ctxt);
+
+  char* trueResult = ("true");
+
+  // Compute the result, store it in a dynamically allocated string
+  // and return it to the caller.
+  //the longest it could be is the length of "true" plus the null
+  char *result = (char *)malloc( strlen(trueResult) + 1 );
+  
+  if(strcmp(value, "") == 0) {
+    strcpy( result, trueResult);
+  } else {
+    sprintf(result, "%s", ""); //empty string is flase
+  }
+  free(value);
+  return result;
+}
+
+// Function to free a Not expression.
+static void destroyNot( Expr *expr )
+{
+  // Cast the this pointer to a more specific type.
+  NotExpr *this = (NotExpr *)expr;
+
+  // Free the value we contain and the Not object itself.
+  free( this->op );
+  free( this );
+}
+
+Expr *makeNot( Expr *op )
+{
+
+  // Allocate space for the NotExpr object
+  NotExpr *this = (NotExpr *) malloc( sizeof( NotExpr ) );
+
+  // Remember our virutal functions.
+  this->eval = evalNot;
+  this->destroy = destroyNot;
+
+  // Remember the operator we contain.
+  this->op = op;
+
+  // Return the result, as an instance of the base.
+  return (Expr *) this;
+}
+  ////////////////////////////////////////////////////////////////////////////////////
+ //////////////////////////MakeVariable//////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////////
+typedef struct {
+  char *(*eval)( Expr *oper, Context *ctxt );
+  void (*destroy)( Expr *oper );
+  //FLAG VARIABLEEXPRE
+
+  /** Literal value of this expression. */
+  const char *name;
+} VariableExpr;
+
+// Function to evaluate a variable expression.
+static char *evalVariable( Expr *expr, Context *ctxt )
+{
+  // Cast the this pointer to a more specific type.
+  VariableExpr *this = (VariableExpr *)expr;
+  
+  char *val = malloc(sizeof(this->name) * strlen(this->name));
+  if(!isEmpty(ctxt)){
+    strcpy(val, getVariable(ctxt, (char*)this->name));
+  } else {
+    strcpy(val, this->name);
+  }
+
+  // Make and return a copy of the value we contain.
+  //printf("%s", val);
+  return (char*) val;
+}
+
+// Function to free a literal expression.
+static void destroyVariable( Expr *expr )
+{
+  // Cast the this pointer to a more specific type.
+  VariableExpr *this = (VariableExpr *)expr;
+
+  // Free the value we contain and the literal object itself.
+  free( (char*) this->name );
+  free( this );
+}
+
+Expr *makeVariable( char const *name )
+{
+
+  // Allocate space for the VariableExper object
+  VariableExpr *this = (VariableExpr *) malloc( sizeof( VariableExpr ) );
+
+  // Remember our virtual functions.
+  this->eval = evalVariable;
+  this->destroy = destroyVariable;
+
+  // Remember the literal string we contain.
+  this->name = name;
+
+  // Return the result, as an instance of the base.
+  return (Expr *) this;
+
+}
+
+  //////////////////////////////////////////////////////////////////////////////////////
+ ///////////////////////////////////set////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////////////
+typedef struct {
+  char *(*eval)( Expr *oper, Context *ctxt );
+  void (*destroy)( Expr *oper );
+  //FLAG VARIABLEEXPRE
+
+  /** Literal value of this expression. */
+  const char *name;
+  Expr *val;
+} SetExpr;
+
+// Function to evaluate a variable expression.
+static char *evalSet( Expr *expr, Context *ctxt )
+{
+  // Cast the this pointer to a more specific type.
+  SetExpr *this = (SetExpr *)expr;
+ 
+  setVariable(ctxt, this->name, this->val->eval(this->val, ctxt));
+  
+  
+
+  // Make and return a copy of the value we contain.
+  return this->val->eval(this->val, ctxt);
+}
+
+// Function to free a literal expression.
+static void destroySet( Expr *expr )
+{
+  // Cast the this pointer to a more specific type.
+  SetExpr *this = (SetExpr *)expr;
+
+  // Free the value we contain and the literal object itself.
+  //free( this->val );
+  this->val->destroy( this->val );
+  free( (char*) this->name );
+  free( this );
+}
+
+Expr *makeSet( char const *name, Expr *value )
+{
+
+  // Allocate space for the VariableExper object
+  SetExpr *this = (SetExpr *) malloc( sizeof( SetExpr ) );
+
+  // Remember our virtual functions.
+  this->eval = evalSet;
+  this->destroy = destroySet;
+
+  // Remember the literal string we contain.
+  this->name = name;
+  this->val = value;
+
+  // Return the result, as an instance of the base.
+  return (Expr *) this;
+
+}
+  //////////////////////////////////////////////////////////////////////////////////////////////
+ /////////////////////////////////IF///////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////////////////////
+static char *evalAdd( Expr *expr, Context *ctxt )
+{
+  // Get a pointer to the more specific type this function works with.
+  BinaryExpr *this = (BinaryExpr *)expr;
+
+  // Evaluate our two operands
+  char *cond = this->op1->eval( this->op1, ctxt );
+  
+  //if condition is false, return it. It's already dynamically allocated, after all.
+  if ( strcmp(cond, "") == 0 )
+    return cond;
+  
+  //otherwise return the evaluated body.
+  return this->op2->eval( this->op2, ctxt );
+}
+
+Expr *makeIf( Expr *op1, Expr *op2 )
+{
+  // Get in a generic instance of BinaryExpr
+  BinaryExpr *this = buildBinaryExpr( op1, op2 );
+
+  // Fill in our function to do adding.
+  this->eval = evalIf;
+
+  // Return the instance as if it's an Expr (which it sort of is)
+  return (Expr *) this;
+}
+
+
+/////////////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////WHILE///////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////////////////
+Expr *makeWhile( Expr *cond, Expr *body )
+{
+  return NULL;
+}

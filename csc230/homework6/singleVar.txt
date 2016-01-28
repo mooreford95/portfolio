@@ -1,0 +1,6 @@
+{
+
+  set x ""
+  if x print "yes.\n"
+
+}
